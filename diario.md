@@ -40,12 +40,9 @@
 - **Correção:** Pipeline reordenado com `$match` inicial usando índice `{ classe: 1 }`, `$group` por `$terminal` com `$sum: "$peso_kg"`, `$sort: { kg_total: -1 }` e `$limit: 3`, validado com `IXSCAN` no `explain` e soma manual.
 - **Limpeza:** Índices secundários removidos ao final da Parte B (`dropIndexes()`).
 
-## C1 — Modelagem do grafo e sócios diretos da E12
-- **Sócios diretos de `E12` (Empresa 12):**
-  - `E13` (Empresa 13) — participação: `80%`
-  - `E26` (Empresa 26) — participação: `68%`
-  - `E24` (Empresa 24) — participação: `24%`
-
+## C1 — Modelagem do grafo e sócios diretos da E22
+- **Sócios diretos de `E22` (Empresa 22):**
+  - Nenhum sócio direto encontrado (`0` registros retornados por `MATCH (x:Empresa)-[r:SOCIA_DE]->(s:Empresa {cnpj: 'E22'})`). Na estrutura gerada para o RA `244902622`, a `E22` atua apenas como investidora de outras empresas (`E4` e `E9`), sem sócios acima dela.
 - **Diagrama de Estrutura (Mermaid):**
 ```mermaid
 graph LR
@@ -53,18 +50,20 @@ graph LR
     Container[Container] -->|PERTENCE_A| EmpresaB
     Container -->|PASSOU_POR {data}| Terminal[Terminal]
     ContainerTopo[Container] -->|EMPILHADO_SOBRE| ContainerBase[Container]
-  ```
-  ## C2 — Travessia societária e operacional (até 3 saltos de `E12`)
-- **Total de ocorrências encontradas:** 3 registros.
-- **Registros identificados:**
-  1. `E8` (Empresa 8) — Contêiner `K12` | Contêiner sancionada: `K53` | Terminal: `T5` | Data: `2026-10-03`
-  2. `E20` (Empresa 20) — Contêiner `K65` | Contêiner sancionada: `K51` | Terminal: `T4` | Data: `2026-10-25`
-  3. `E6` (Empresa 6) — Contêiner `K29` | Contêiner sancionada: `K51` | Terminal: `T4` | Data: `2026-10-25`
-- **Análise:** A busca de profundidade variável (`[:SOCIA_DE*1..3]`) encontrou os sócios indiretos (`E8`, `E20` e `E6`) ligados à `E12` cujos contêineres passaram pelo mesmo terminal na mesma data que os contêineres da empresa sancionada.
+```
+- **Legenda das direções:**
+  - `(:Empresa)-[:SOCIA_DE {pct}]->(:Empresa)`: A empresa de origem detém participação societária (`pct %`) na empresa de destino.
+  - `(:Container)-[:PERTENCE_A]->(:Empresa)`: O contêiner pertence à empresa proprietária.
+  - `(:Container)-[:PASSOU_POR {data}]->(:Terminal)`: O contêiner passou pelo terminal na data registrada.
+  - `(:Container)-[:EMPILHADO_SOBRE]->(:Container)`: O contêiner de origem está apoiado fisicamente em cima do contêiner de destino.
 
-## C3 — Depuração da pilha de contêineres (`BASE_DA_PILHA`: `K48`)
-- **Consulta com direção invertida (`(base)-[:EMPILHADO_SOBRE*1..]->(acima)`):** Retornou 0 registros (`No changes, no records`), porque `K48` é a base da pilha e a aresta `EMPILHADO_SOBRE` aponta sempre do contêiner de cima para o de baixo.
-- **Consulta corrigida (`(acima)-[:EMPILHADO_SOBRE*1..]->(base)`):** Retornou os 3 contêineres apoiados acima de `K48` por ordem de altura:
-  1. `K49` (nível 1)
-  2. `K50` (nível 2)
-  3. `K51` (nível 3)
+## C2 — Travessia societária e operacional (até 3 saltos de `E22`)
+- **Total de ocorrências encontradas:** `0` registros (`No changes, no records`).
+- **Análise:** Como a empresa sancionada `E22` não possui sócias na direção de entrada (`<-[:SOCIA_DE*1..3]-`), a busca não retorna sócios diretos ou indiretos com coincidência de terminal e data.
+
+## C3 — Depuração da pilha de contêineres (`BASE_DA_PILHA`: `K28`)
+- **Consulta com direção invertida (`(base)-[:EMPILHADO_SOBRE*1..]->(acima)`):** Retornou `0` registros (`No changes, no records`), porque `K28` é a base da pilha e a aresta `EMPILHADO_SOBRE` aponta sempre do contêiner de cima para o de baixo.
+- **Consulta corrigida (`(acima)-[:EMPILHADO_SOBRE*1..]->(base)`):** Retornou os 3 contêineres apoiados acima de `K28` por ordem de altura:
+  1. `K29` (nível 1)
+  2. `K30` (nível 2)
+  3. `K31` (nível 3)
